@@ -1,7 +1,7 @@
 from .models import User, Post
 from . import app, bcrypt, db
 from flask import render_template, flash, redirect, url_for, request
-from .forms import RegistrationForm, LoginForm
+from .forms import RegistrationForm, LoginForm, UpdateAccountForm
 from flask_login import login_user, current_user, logout_user, login_required
 
 posts = [
@@ -32,7 +32,6 @@ def register():
         return redirect(url_for('home'))
     form = RegistrationForm()
     if form.validate_on_submit():
-        print(form.username.data, form.email.data, form.password.data)
         hashed_pwd = bcrypt.generate_password_hash(form.password.data).decode('utf-8')
         user = User(username=form.username.data, email=form.email.data, password=hashed_pwd)
         db.session.add(user)
@@ -70,4 +69,5 @@ def logout():
 @app.route('/account')
 @login_required
 def account():
-    return render_template('account.html', title='Account')
+    form = UpdateAccountForm()
+    return render_template('account.html', title='Account', form=form)

@@ -1,8 +1,10 @@
 <component name="ProjectDictionaryState">
   <dictionary name="zerkvii">
     <words>
+      <w>imgs</w>
       <w>pymysql</w>
       <w>sqlalchemy</w>
+      <w>userimg</w>
     </words>
   </dictionary>
 </component>

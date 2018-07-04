@@ -1,4 +1,5 @@
 from flask_wtf import FlaskForm
+from flask_login import current_user
 from wtforms import StringField, PasswordField, SubmitField, BooleanField
 from wtforms.validators import DataRequired, Length, Email, EqualTo, Regexp, ValidationError
 from .models import User
@@ -30,3 +31,21 @@ class LoginForm(FlaskForm):
     password = PasswordField('密码', validators=[DataRequired(message='输入不为空')])
     remember = BooleanField('记住我')
     submit = SubmitField('登录')
+
+
+class UpdateAccountForm(FlaskForm):
+    username = StringField('用户名', validators=[DataRequired(message='输入不为空'), Length(min=2, max=22, message='长度2-22')])
+    email = StringField('邮箱', validators=[DataRequired(message='输入不为空'), Email(message='邮箱格式不合法')])
+    submit = SubmitField('更新')
+
+    def validate_username(self, username):
+        if username.data != current_user.username:
+            user = User.query.filter_by(username=username.data).first()
+            if user:
+                raise ValidationError('此用户名已存在')
+
+    def validate_email(self, email):
+        if email.data != current_user.email:
+            user = User.query.filter_by(email=email.data).first()
+            if user:
+                raise ValidationError('此邮箱已存在')
