@@ -1,7 +1,8 @@
 from .models import User, Post
-from . import app
-from flask import render_template, flash, redirect,url_for
+from . import app, bcrypt, db
+from flask import render_template, flash, redirect, url_for, request
 from .forms import RegistrationForm, LoginForm
+from flask_login import login_user, current_user, logout_user, login_required
 
 posts = [
     {
@@ -27,20 +28,46 @@ def about():
 
 @app.route("/register", methods=['GET', 'POST'])
 def register():
+    if current_user.is_authenticated:
+        return redirect(url_for('home'))
     form = RegistrationForm()
     if form.validate_on_submit():
+        print(form.username.data, form.email.data, form.password.data)
+        hashed_pwd = bcrypt.generate_password_hash(form.password.data).decode('utf-8')
+        user = User(username=form.username.data, email=form.email.data, password=hashed_pwd)
+        db.session.add(user)
+        db.session.commit()
         flash(f'成功创建账户{form.username.data}', 'success')
-        return redirect(url_for('home'))
+        return redirect(url_for('login'))
     return render_template('register.html', title='register', form=form)
 
 
 @app.route("/login", methods=['GET', 'POST'])
 def login():
+    if current_user.is_authenticated:
+        return redirect(url_for('home'))
     form = LoginForm()
     if form.validate_on_submit():
-        if form.username.data == 'admin@blog.com' or form.username.data == 'lk' and form.password.data == 'password':
-            flash('登录成功', 'success')
-            return redirect(url_for('home'))
+        user = User.query.filter_by(username=form.username.data).first()
+        if user and bcrypt.check_password_hash(user.password, form.password.data):
+            login_user(user, remember=form.remember.data)
+            next_page = request.args.get('next')
+            if next_page:
+                return redirect(next_page)
+            else:
+                return redirect(url_for('home'))
         else:
             flash('登录失败，请检查账号或者密码', 'danger')
     return render_template('login.html', title='Login', form=form)
+
+
+@app.route('/logout')
+def logout():
+    logout_user()
+    return redirect(url_for('home'))
+
+
+@app.route('/account')
+@login_required
+def account():
+    return render_template('account.html', title='Account')
