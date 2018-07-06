@@ -1,29 +1,24 @@
-from .models import User, Post
-from . import app, bcrypt, db
-from flask import render_template, flash, redirect, url_for, request
-from .forms import RegistrationForm, LoginForm, UpdateAccountForm
+import os
+import secrets
+from PIL import Image
+from flask import render_template, flash, redirect, url_for, request, abort
 from flask_login import login_user, current_user, logout_user, login_required
 
-posts = [
-    {
-        'author': 'zerk',
-        'title': 'today',
-        'content': 'happy',
-        'date': '2018-6-20'
-
-    }
-]
+from . import app, bcrypt, db
+from .forms import RegistrationForm, LoginForm, UpdateAccountForm, PostForm
+from .models import User, Post
 
 
 @app.route("/")
 @app.route("/home")
 def home():
-    return render_template('home.html', posts=posts, title='home')
+    posts = Post.query.all()
+    return render_template('home.html', posts=posts, title='主页')
 
 
 @app.route("/about")
 def about():
-    return render_template('about.html', title='about')
+    return render_template('about.html', title='关于')
 
 
 @app.route("/register", methods=['GET', 'POST'])
@@ -38,7 +33,7 @@ def register():
         db.session.commit()
         flash(f'成功创建账户{form.username.data}', 'success')
         return redirect(url_for('login'))
-    return render_template('register.html', title='register', form=form)
+    return render_template('register.html', title='注册', form=form)
 
 
 @app.route("/login", methods=['GET', 'POST'])
@@ -57,7 +52,7 @@ def login():
                 return redirect(url_for('home'))
         else:
             flash('登录失败，请检查账号或者密码', 'danger')
-    return render_template('login.html', title='Login', form=form)
+    return render_template('login.html', title='登录', form=form)
 
 
 @app.route('/logout')
@@ -66,8 +61,82 @@ def logout():
     return redirect(url_for('home'))
 
 
-@app.route('/account')
+@app.route('/account', methods=['GET', 'POST'])
 @login_required
 def account():
     form = UpdateAccountForm()
-    return render_template('account.html', title='Account', form=form)
+    if form.validate_on_submit():
+        if form.picture.data:
+            picture_file = save_picture(form.picture.data)
+            current_user.image_file = picture_file
+        current_user.username = form.username.data
+        current_user.email = form.email.data
+        db.session.commit()
+        flash('个人信息已经更新', 'success')
+        return redirect(url_for('account'))
+    elif request.method == 'GET':
+        form.username.data = current_user.username
+        form.email.data = current_user.email
+    return render_template('account.html', title='个人信息', form=form)
+
+
+def save_picture(form_picture):
+    random_hex = secrets.token_hex(8)
+    _, f_ext = os.path.splitext(form_picture.filename)
+    picture_fn = random_hex + f_ext
+    picture_path = os.path.join(app.root_path, 'static/imgs', picture_fn)
+    output_size = (125, 125)
+    i = Image.open(form_picture)
+    i.thumbnail(output_size)
+    i.save(picture_path)
+    return picture_fn
+
+
+@app.route('/post/new', methods=['GET', 'POST'])
+@login_required
+def new_post():
+    form = PostForm()
+    if form.validate_on_submit():
+        post = Post(title=form.title.data, content=form.content.data, author=current_user)
+        db.session.add(post)
+        db.session.commit()
+        flash('成功发布文章', 'success')
+        return redirect(url_for('home'))
+    return render_template('create_post.html', title='新文章',
+                           form=form, legend='新文章')
+
+
+@app.route('/post/<int:post_id>', methods=['GET', 'POST'])
+def post(post_id):
+    post = Post.query.get_or_404(post_id)
+    return render_template('post.html', title='文章', post=post)
+
+
+@app.route('/post/<int:post_id>/update', methods=['GET', 'POST'])
+def update_post(post_id):
+    post = Post.query.get_or_404(post_id)
+    if post.author != current_user:
+        abort(403)
+    form = PostForm()
+    if form.validate_on_submit():
+        post.title = form.title.data
+        post.content = form.content.data
+        db.session.commit()
+        flash('更新文章成功', 'success')
+        return redirect(url_for('post', post_id=post.id))
+    elif request.method == 'GET':
+        form.title.data = post.title
+        form.content.data = post.content
+    return render_template('create_post.html', title='修改文章', form=form, legend='修改文章')
+
+
+@app.route("/post/<int:post_id>/delete", methods=['POST'])
+@login_required
+def delete_post(post_id):
+    post = Post.query.get_or_404(post_id)
+    if post.author != current_user:
+        abort(403)
+    db.session.delete(post)
+    db.session.commit()
+    flash('删除文章成功', 'success')
+    return redirect(url_for('home'))
