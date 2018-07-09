@@ -1,10 +1,9 @@
-# -*- coding: utf-8 -*-
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileAllowed
 from flask_login import current_user
 from wtforms import StringField, PasswordField, SubmitField, BooleanField, TextAreaField
 from wtforms.validators import DataRequired, Length, Email, EqualTo, Regexp, ValidationError
-from .models import User
+from app.models import User
 
 
 class RegistrationForm(FlaskForm):
@@ -52,12 +51,6 @@ class UpdateAccountForm(FlaskForm):
             user = User.query.filter_by(email=email.data).first()
             if user:
                 raise ValidationError('此邮箱已存在')
-
-
-class PostForm(FlaskForm):
-    title = StringField('标题', validators=[DataRequired(message='标题不为空')])
-    content = TextAreaField('内容', validators=[DataRequired(message='内容不为空')])
-    submit = SubmitField('提交')
 
 
 class RequestResetForm(FlaskForm):
