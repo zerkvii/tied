@@ -1,4 +1,4 @@
-{% extends "layout.html" %}
+{% extends "base/layout.html" %}
 {% block content %}
     <h1 class="mb-3">{{ user.username }}的文章({{ posts.total }})</h1>
     {% for post in posts.items %}

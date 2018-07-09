@@ -1,6 +1,7 @@
 <component name="ProjectDictionaryState">
   <dictionary name="zerkvii">
     <words>
+      <w>bcrypt</w>
       <w>imgs</w>
       <w>pymysql</w>
       <w>sqlalchemy</w>

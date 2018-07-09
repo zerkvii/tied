@@ -23,7 +23,7 @@ def register():
         db.session.commit()
         flash(f'成功创建账户{form.username.data}', 'success')
         return redirect(url_for('users.login'))
-    return render_template('register.html', title='注册', form=form)
+    return render_template('user/register.html', title='注册', form=form)
 
 
 @users.route("/login", methods=['GET', 'POST'])
@@ -42,7 +42,7 @@ def login():
                 return redirect(url_for('main.home'))
         else:
             flash('登录失败，请检查账号或者密码', 'danger')
-    return render_template('login.html', title='登录', form=form)
+    return render_template('user/login.html', title='登录', form=form)
 
 
 @users.route('/logout')
@@ -67,7 +67,7 @@ def account():
     elif request.method == 'GET':
         form.username.data = current_user.username
         form.email.data = current_user.email
-    return render_template('account.html', title='个人信息', form=form)
+    return render_template('user/account.html', title='个人信息', form=form)
 
 
 @users.route("/user/<string:username>")
@@ -77,7 +77,7 @@ def user_posts(username):
     posts = Post.query.filter_by(author=user) \
         .order_by(Post.date_posted.desc()) \
         .paginate(page=page, per_page=5)
-    return render_template('user_posts.html', posts=posts, user=user)
+    return render_template('user/user_posts.html', posts=posts, user=user)
 
 
 @users.route('/reset_password', methods=['GET', 'POST'])
@@ -90,7 +90,7 @@ def reset_request():
         send_reset_email(user)
         flash('密令已经发送到你的邮箱', 'info')
         return redirect(url_for('users.login'))
-    return render_template('reset_request.html', title='重设密码', form=form)
+    return render_template('user/reset_request.html', title='重设密码', form=form)
 
 
 @users.route('/reset_password/<token>', methods=['GET', 'POST'])
@@ -108,4 +108,4 @@ def reset_token(token):
         db.session.commit()
         flash(f'成功更新{form.username.data}的密码', 'success')
         return redirect(url_for('users.login'))
-    return render_template('reset_token.html', title='重设密码', form=form)
+    return render_template('user/reset_token.html', title='重设密码', form=form)

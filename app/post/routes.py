@@ -18,14 +18,14 @@ def new_post():
         db.session.commit()
         flash('成功发布文章', 'success')
         return redirect(url_for('main.home'))
-    return render_template('create_post.html', title='新文章',
+    return render_template('post/create_post.html', title='新文章',
                            form=form, legend='新文章')
 
 
 @posts.route('/post/<int:post_id>', methods=['GET', 'POST'])
 def post(post_id):
     post = Post.query.get_or_404(post_id)
-    return render_template('post.html', title='文章', post=post)
+    return render_template('post/post.html', title='文章', post=post)
 
 
 @posts.route('/post/<int:post_id>/update', methods=['GET', 'POST'])
@@ -43,7 +43,7 @@ def update_post(post_id):
     elif request.method == 'GET':
         form.title.data = post.title
         form.content.data = post.content
-    return render_template('create_post.html', title='修改文章', form=form, legend='修改文章')
+    return render_template('post/create_post.html', title='修改文章', form=form, legend='修改文章')
 
 
 @posts.route("/post/<int:post_id>/delete", methods=['POST'])
